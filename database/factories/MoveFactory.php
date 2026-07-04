@@ -31,6 +31,7 @@ class MoveFactory extends Factory
             'fen_after' => 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1',
             'evaluation' => null,
             'evaluation_type' => null,
+            'eval_loss' => null,
             'best_move' => null,
             'classification' => null,
         ];

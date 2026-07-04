@@ -10,6 +10,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
     Route::get('games', [GameController::class, 'index'])->name('games.index');
+    Route::get('games/{game}', [GameController::class, 'show'])->name('games.show');
     Route::post('games/{game}/analyze', [GameController::class, 'analyze'])->name('games.analyze');
 
     Route::get('import/chess-com', [ChessComImportController::class, 'create'])

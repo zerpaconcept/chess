@@ -9,9 +9,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { index as gamesIndex } from '@/routes/games';
-import { Head, Link, router } from '@inertiajs/react';
-import { Cpu } from 'lucide-react';
+import { index as gamesIndex, show as gamesShow } from '@/routes/games';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Cpu, Eye } from 'lucide-react';
 
 type GameListItem = {
     id: number;
@@ -64,6 +64,15 @@ function formatPlayers(game: GameListItem): string {
 }
 
 export default function GamesIndex({ games }: { games: PaginatedGames }) {
+    setLayoutProps({
+        breadcrumbs: [
+            {
+                title: 'Games',
+                href: gamesIndex(),
+            },
+        ],
+    });
+
     function analyze(game: GameListItem): void {
         router.post(GameController.analyze.url(game.id), {}, { preserveScroll: true });
     }
@@ -125,9 +134,12 @@ export default function GamesIndex({ games }: { games: PaginatedGames }) {
                                                 className="border-b last:border-0"
                                             >
                                                 <td className="py-3 pr-4">
-                                                    <div className="font-medium">
+                                                    <Link
+                                                        href={gamesShow(game.id)}
+                                                        className="font-medium hover:underline"
+                                                    >
                                                         {formatPlayers(game)}
-                                                    </div>
+                                                    </Link>
                                                     {game.opening && (
                                                         <div className="text-xs text-muted-foreground">
                                                             {game.opening}
@@ -171,25 +183,37 @@ export default function GamesIndex({ games }: { games: PaginatedGames }) {
                                                     </div>
                                                 </td>
                                                 <td className="py-3">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        disabled={
-                                                            !game.can_analyze
-                                                        }
-                                                        onClick={() =>
-                                                            analyze(game)
-                                                        }
-                                                    >
-                                                        <Cpu className="size-4" />
-                                                        {game.analysis_status ===
-                                                        'in_progress'
-                                                            ? 'Analyzing...'
-                                                            : game.analysis_status ===
-                                                                'completed'
-                                                              ? 'Re-analyze'
-                                                              : 'Analyze'}
-                                                    </Button>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="secondary"
+                                                            asChild
+                                                        >
+                                                            <Link href={gamesShow(game.id)}>
+                                                                <Eye className="size-4" />
+                                                                Review
+                                                            </Link>
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={
+                                                                !game.can_analyze
+                                                            }
+                                                            onClick={() =>
+                                                                analyze(game)
+                                                            }
+                                                        >
+                                                            <Cpu className="size-4" />
+                                                            {game.analysis_status ===
+                                                            'in_progress'
+                                                                ? 'Analyzing...'
+                                                                : game.analysis_status ===
+                                                                    'completed'
+                                                                  ? 'Re-analyze'
+                                                                  : 'Analyze'}
+                                                        </Button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -236,12 +260,3 @@ export default function GamesIndex({ games }: { games: PaginatedGames }) {
         </>
     );
 }
-
-GamesIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Games',
-            href: gamesIndex(),
-        },
-    ],
-};

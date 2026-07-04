@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $fen_after
  * @property int|null $evaluation
  * @property EvaluationType|null $evaluation_type
+ * @property int|null $eval_loss
  * @property string|null $best_move
  * @property string|null $classification
  * @property Carbon|null $created_at
@@ -37,6 +38,7 @@ use Illuminate\Support\Carbon;
     'fen_after',
     'evaluation',
     'evaluation_type',
+    'eval_loss',
     'best_move',
     'classification',
 ])]

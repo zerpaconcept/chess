@@ -56,10 +56,11 @@ class GameAnalysisTest extends TestCase
     {
         $this->mock(StockfishEngine::class, function (MockInterface $mock): void {
             $mock->shouldReceive('analyze')
-                ->twice()
+                ->times(3)
                 ->andReturn(
+                    new EngineAnalysis(0, EvaluationType::Centipawn, 'e2e4', 18),
                     new EngineAnalysis(25, EvaluationType::Centipawn, 'e2e4', 18),
-                    new EngineAnalysis(-15, EvaluationType::Centipawn, 'e7e5', 18),
+                    new EngineAnalysis(15, EvaluationType::Centipawn, 'e7e5', 18),
                 );
         });
 
@@ -78,11 +79,17 @@ class GameAnalysisTest extends TestCase
         $this->assertSame(2, Move::query()->where('game_id', $game->id)->count());
 
         $firstMove = Move::query()->where('game_id', $game->id)->where('ply', 1)->first();
+        $secondMove = Move::query()->where('game_id', $game->id)->where('ply', 2)->first();
 
         $this->assertNotNull($firstMove);
         $this->assertSame(25, $firstMove->evaluation);
         $this->assertSame(EvaluationType::Centipawn, $firstMove->evaluation_type);
         $this->assertSame('e2e4', $firstMove->best_move);
+        $this->assertSame(-25, $firstMove->eval_loss);
+
+        $this->assertNotNull($secondMove);
+        $this->assertSame(15, $secondMove->evaluation);
+        $this->assertSame(-10, $secondMove->eval_loss);
     }
 
     public function test_import_does_not_parse_moves(): void

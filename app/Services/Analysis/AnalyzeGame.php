@@ -12,9 +12,12 @@ use Throwable;
 
 class AnalyzeGame
 {
+    private const string STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
     public function __construct(
         private readonly StoreGameMoves $storeGameMoves,
         private readonly StockfishEngine $stockfishEngine,
+        private readonly CalculateEvalLoss $calculateEvalLoss,
     ) {}
 
     public function analyze(Game $game): void
@@ -33,14 +36,30 @@ class AnalyzeGame
 
                 $game->load('moves');
 
+                $previousAnalysis = $this->stockfishEngine->analyze(
+                    $game->initial_fen ?? self::STARTING_FEN,
+                    $depth,
+                );
+
                 foreach ($game->moves as $move) {
                     $analysis = $this->stockfishEngine->analyze($move->fen_after, $depth);
+
+                    $evalLoss = $this->calculateEvalLoss->calculate(
+                        $move->color,
+                        $previousAnalysis->evaluation,
+                        $previousAnalysis->evaluationType,
+                        $analysis->evaluation,
+                        $analysis->evaluationType,
+                    );
 
                     $move->update([
                         'evaluation' => $analysis->evaluation,
                         'evaluation_type' => $analysis->evaluationType,
                         'best_move' => $analysis->bestMove,
+                        'eval_loss' => $evalLoss,
                     ]);
+
+                    $previousAnalysis = $analysis;
                 }
 
                 $game->update([
