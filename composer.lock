@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "161609afe90a71eeee724e659c8ee9da",
+    "content-hash": "e1afa8adb3d50c40c6830a6b833856dd",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -188,6 +188,55 @@
                 }
             ],
             "time": "2024-02-09T16:56:22+00:00"
+        },
+        {
+            "name": "cmuset/chess-tools",
+            "version": "v2.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/clemuset/chess-tools.git",
+                "reference": "13e549f58ecfae0b9475baab85940c2a8eaa87f5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/clemuset/chess-tools/zipball/13e549f58ecfae0b9475baab85940c2a8eaa87f5",
+                "reference": "13e549f58ecfae0b9475baab85940c2a8eaa87f5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.4"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.87",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Cmuset\\ChessTools\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "A chess tools library for parsing and exporting chess notations (PGN, SAN, FEN).",
+            "keywords": [
+                "PGN",
+                "applier",
+                "chess",
+                "fen",
+                "parser",
+                "san",
+                "tool",
+                "validator"
+            ],
+            "support": {
+                "issues": "https://github.com/clemuset/chess-tools/issues",
+                "source": "https://github.com/clemuset/chess-tools/tree/v2.0.2"
+            },
+            "time": "2026-03-06T18:40:31+00:00"
         },
         {
             "name": "dasprid/enum",
