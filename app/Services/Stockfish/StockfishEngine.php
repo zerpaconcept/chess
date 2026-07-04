@@ -2,29 +2,27 @@
 
 namespace App\Services\Stockfish;
 
-use App\Enums\EvaluationType;
 use RuntimeException;
 
 class StockfishEngine
 {
-    private readonly string $binaryPath;
-
-    private readonly int $movetimeMs;
-
-    public function __construct(?string $binaryPath = null, ?int $movetimeMs = null)
-    {
-        $this->binaryPath = $binaryPath ?? config('services.stockfish.path');
-        $this->movetimeMs = $movetimeMs ?? config('services.stockfish.movetime_ms', 500);
-    }
+    public function __construct(
+        private readonly ?string $binaryPath = null,
+        private readonly ?int $movetimeMs = null,
+        private readonly ?ParseStockfishOutput $outputParser = null,
+    ) {}
 
     public function analyze(string $fen, int $depth): EngineAnalysis
     {
-        if (! is_file($this->binaryPath)) {
-            throw new RuntimeException("Stockfish binary not found at [{$this->binaryPath}].");
+        $binaryPath = $this->binaryPath ?? config('services.stockfish.path');
+        $movetimeMs = $this->movetimeMs ?? config('services.stockfish.movetime_ms', 500);
+
+        if (! is_file($binaryPath)) {
+            throw new RuntimeException("Stockfish binary not found at [{$binaryPath}].");
         }
 
         $process = proc_open(
-            [$this->binaryPath],
+            [$binaryPath],
             [
                 ['pipe', 'r'],
                 ['pipe', 'w'],
@@ -45,11 +43,11 @@ class StockfishEngine
             $this->readUntil($pipes[1], 'readyok');
 
             $this->write($pipes[0], "position fen {$fen}");
-            $this->write($pipes[0], "go depth {$depth} movetime {$this->movetimeMs}");
+            $this->write($pipes[0], "go depth {$depth} movetime {$movetimeMs}");
 
             $output = $this->readUntil($pipes[1], 'bestmove');
 
-            return $this->parseAnalysis($output, $fen, $depth);
+            return ($this->outputParser ?? new ParseStockfishOutput)->parse($output, $fen, $depth);
         } finally {
             $this->write($pipes[0], 'quit');
             fclose($pipes[0]);
@@ -92,70 +90,5 @@ class StockfishEngine
         }
 
         throw new RuntimeException("Timed out waiting for Stockfish response containing [{$needle}].");
-    }
-
-    /**
-     * @return array{score: int, type: EvaluationType, bestMove: ?string, depth: int}|null
-     */
-    private function parseScoreLine(string $line): ?array
-    {
-        if (! preg_match('/depth (\d+).*score (cp|mate) (-?\d+).* pv (\S+)/', $line, $matches)) {
-            return null;
-        }
-
-        $score = (int) $matches[3];
-        $type = $matches[2] === 'mate' ? EvaluationType::Mate : EvaluationType::Centipawn;
-
-        return [
-            'score' => $score,
-            'type' => $type,
-            'bestMove' => $matches[4],
-            'depth' => (int) $matches[1],
-        ];
-    }
-
-    private function parseAnalysis(string $output, string $fen, int $targetDepth): EngineAnalysis
-    {
-        $bestLine = null;
-
-        foreach (explode("\n", $output) as $line) {
-            if (! str_starts_with(trim($line), 'info')) {
-                continue;
-            }
-
-            $parsed = $this->parseScoreLine($line);
-
-            if ($parsed === null) {
-                continue;
-            }
-
-            if ($bestLine === null || $parsed['depth'] >= $bestLine['depth']) {
-                $bestLine = $parsed;
-            }
-        }
-
-        if ($bestLine === null) {
-            throw new RuntimeException('Stockfish did not return an evaluation.');
-        }
-
-        $evaluation = $this->normalizeScoreToWhitePerspective($fen, $bestLine['score'], $bestLine['type']);
-
-        return new EngineAnalysis(
-            evaluation: $evaluation,
-            evaluationType: $bestLine['type'],
-            bestMove: $bestLine['bestMove'],
-            depth: min($bestLine['depth'], $targetDepth),
-        );
-    }
-
-    private function normalizeScoreToWhitePerspective(string $fen, int $score, EvaluationType $type): int
-    {
-        $sideToMove = explode(' ', trim($fen))[1] ?? 'w';
-
-        if ($sideToMove === 'b') {
-            return $type === EvaluationType::Mate ? -$score : -$score;
-        }
-
-        return $score;
     }
 }
