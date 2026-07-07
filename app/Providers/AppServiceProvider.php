@@ -2,9 +2,12 @@
 
 namespace App\Providers;
 
+use App\Listeners\MarkGameAnalysisFailedOnJobFailure;
 use Carbon\CarbonImmutable;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -23,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(JobFailed::class, MarkGameAnalysisFailedOnJobFailure::class);
+
         $this->configureDefaults();
     }
 

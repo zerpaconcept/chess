@@ -110,8 +110,6 @@ class GameController extends Controller
             ]);
         }
 
-        $game->update(['analysis_status' => GameAnalysisStatus::InProgress]);
-
         AnalyzeGameJob::dispatch($game);
 
         Inertia::flash('toast', [

@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Services\Analysis\AnalyzeGame;
 use App\Services\Stockfish\EngineAnalysis;
 use App\Services\Stockfish\StockfishEngine;
+use Illuminate\Contracts\Queue\Job;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Queue;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -36,7 +38,45 @@ class GameAnalysisTest extends TestCase
 
         Queue::assertPushed(AnalyzeGameJob::class, fn (AnalyzeGameJob $job) => $job->game->is($game));
 
-        $this->assertSame(GameAnalysisStatus::InProgress, $game->fresh()->analysis_status);
+        $this->assertSame(GameAnalysisStatus::Pending, $game->fresh()->analysis_status);
+    }
+
+    public function test_failed_analysis_job_marks_game_as_failed(): void
+    {
+        $game = Game::factory()->create([
+            'pgn' => "[Event \"Test\"]\n\n1. e4 e5 1-0\n",
+            'analysis_status' => GameAnalysisStatus::InProgress,
+        ]);
+
+        (new AnalyzeGameJob($game))->failed(new \RuntimeException('Worker timed out.'));
+
+        $this->assertSame(GameAnalysisStatus::Failed, $game->fresh()->analysis_status);
+    }
+
+    public function test_job_failed_event_marks_game_as_failed(): void
+    {
+        $game = Game::factory()->create([
+            'analysis_status' => GameAnalysisStatus::InProgress,
+        ]);
+
+        $job = new AnalyzeGameJob($game);
+        $payload = [
+            'displayName' => AnalyzeGameJob::class,
+            'data' => [
+                'command' => serialize($job),
+            ],
+        ];
+
+        $queueJob = $this->createMock(Job::class);
+        $queueJob->method('payload')->willReturn($payload);
+
+        event(new JobFailed(
+            'database',
+            $queueJob,
+            new \RuntimeException('Worker timed out.'),
+        ));
+
+        $this->assertSame(GameAnalysisStatus::Failed, $game->fresh()->analysis_status);
     }
 
     public function test_user_cannot_analyze_another_users_game(): void

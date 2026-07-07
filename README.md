@@ -63,11 +63,13 @@ php artisan migrate
 npm run dev
 ```
 
-Or use the combined dev script (app server, queue, logs, Vite):
+Or use the combined dev script (app server, queue, Vite):
 
 ```bash
 composer run dev
 ```
+
+The dev script runs `queue:work --timeout=3600` so analysis jobs are not killed at Laravel's default 60 second worker limit.
 
 ### Stockfish
 
@@ -103,10 +105,10 @@ QUEUE_CONNECTION=database
 Run a worker:
 
 ```bash
-php artisan queue:work
+php artisan queue:work --timeout=3600 --tries=1
 ```
 
-If analysis jobs stay pending, the queue worker is likely not running.
+Set `DB_QUEUE_RETRY_AFTER` higher than the worker timeout (default `3700` in `.env.example`) so long jobs are not released back to the queue while still running.
 
 ## Testing
 
